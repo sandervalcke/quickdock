@@ -1,6 +1,8 @@
 # quickdock
-Docking Container Example using QtQuick
-Written by Georg Lempe
+based on "Docking Container Example using QtQuick, written by Georg Lempe"
 
-The icons are part of Google's Material Design icon collection
-https://material.io/resources/icons/
+Added:
+
+* dragging of docked windows
+* change opacity when dragging
+* collapse/expand of dockable windows
