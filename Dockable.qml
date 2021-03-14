@@ -12,6 +12,9 @@ Item {
     implicitWidth:  content.implicitWidth
     implicitHeight: content.implicitHeight
 
+    // Dragged window always on top
+    z: dragMouseArea.pressed && content.state === "docked" ? 1 : 0
+
     ColumnLayout {
         id: content
         width:  250
@@ -19,7 +22,7 @@ Item {
 
         spacing: 0
 
-        opacity: dragMouseArea.containsPress ? 0.5 : 1
+        opacity: dragMouseArea.pressed ? 0.5 : 1
         Behavior on opacity { NumberAnimation { duration: 100 } }
 
         ToolBar {
@@ -44,14 +47,22 @@ Item {
 
                     if (content.state === "docked")
                     {
-                        root.x = root.x + delta.x;
-                        root.y = root.y + delta.y;
+                        root.x = Math.max(0,
+                                          Math.min(root.parent.width - content.width,
+                                                   root.x + delta.x));
+                        // Clip to toolBar height to allow putting the actual content
+                        // area out of sight, if it's very long this could be desired...?
+                        // If we don't allow this we need to adjust window position on unminimize,
+                        // the content could be going over the lower border
+                        root.y = Math.max(0,
+                                          Math.min(root.parent.height - toolBar.height,
+                                                   root.y + delta.y));
                     } else
                     {
-                        const new_x = window.x + delta.x
-                        const new_y = window.y + delta.y
-                        window.x = new_x
-                        window.y = new_y
+                        const new_x = window.x + delta.x;
+                        const new_y = window.y + delta.y;
+                        window.x = new_x;
+                        window.y = new_y;
                     }
                 }
             }
