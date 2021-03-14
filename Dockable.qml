@@ -1,23 +1,31 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Window 2.12
-import QtQuick.Controls.Material 2.12
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Window 2.15
+import QtQuick.Layouts 1.12
+
 
 Item {
     id: root
     default property alias contents: placeholder.data
     property alias title: titleLabel.text
-    implicitHeight: 190
-    Rectangle {
+
+    implicitWidth:  content.implicitWidth
+    implicitHeight: content.implicitHeight
+
+    ColumnLayout {
         id: content
-        anchors.fill: parent
-        width: 200
-        height: implicitHeight
+        width:  250
         state: "docked"
-        color: "#cfcfcf"
+
+        spacing: 0
+
+        opacity: dragMouseArea.containsPress ? 0.5 : 1
+        Behavior on opacity { NumberAnimation { duration: 100 } }
+
         ToolBar {
             id: toolBar
-            anchors { top: parent.top; left: parent.left; right: parent.right }
+
+            Layout.fillWidth: true
             Label {
                 id: titleLabel
                 anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
@@ -25,33 +33,41 @@ Item {
             MouseArea {
                 id: dragMouseArea
                 anchors.fill: parent
-                property variant clickPos: "1,1"
+                property point clickPos: Qt.point(1,1)
+
                 onPressed: {
                     clickPos = Qt.point(mouse.x,mouse.y)
                 }
 
                 onPositionChanged: {
-                    var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y)
-                    var new_x = window.x + delta.x
-                    var new_y = window.y + delta.y
-//                    if (new_y <= 0)
-//                        window.visibility = Window.Maximized
-//                    else
-//                    {
-//                        if (window.visibility === Window.Maximized)
-//                            window.visibility = Window.Windowed
+                    const delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y)
+
+                    if (content.state === "docked")
+                    {
+                        root.x = root.x + delta.x;
+                        root.y = root.y + delta.y;
+                    } else
+                    {
+                        const new_x = window.x + delta.x
+                        const new_y = window.y + delta.y
                         window.x = new_x
                         window.y = new_y
-//                    }
+                    }
                 }
             }
 
             Row {
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 8 }
-                Button {
-                    flat: true
-                    icon.source: content.state == "docked" ?
-                                     "qrc:/icons/launch-24px.svg" : "qrc:/icons/close-24px.svg"
+                ToolButton {
+                    text: "_"
+                    onClicked: {
+                        placeholder.visible = ! placeholder.visible
+                    }
+                }
+
+                ToolButton {
+                    text: content.state == "docked" ? "U"
+                                                    : "D"
                     onClicked: {
                         if(content.state == "docked")
                             content.state = "undocked"
@@ -61,14 +77,19 @@ Item {
                 }
             }
         }
-        Item {
+
+        Rectangle {
             id: placeholder
-            anchors { top: toolBar.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+
+            Layout.fillWidth:  true
+            color: "#cfcfcf"
+            Layout.preferredHeight: childrenRect.height
         }
+
         states: [
             State {
                 name: "undocked"
-                PropertyChanges { target: root; height: 0 }
+                PropertyChanges { target: root; height: 0; x: 0; y: 0 }
                 PropertyChanges { target: window; visible: true }
                 ParentChange { target: content; parent: undockedContainer }
             },
@@ -82,13 +103,12 @@ Item {
     }
     Window {
         id: window
-        width: 320;
-        height: 240;
+        width:  undockedContainer.childrenRect.width
+        height: undockedContainer.childrenRect.height
         flags: Qt.FramelessWindowHint
 
         Item {
             id: undockedContainer
-            anchors.fill: parent
         }
 
         onClosing: {
